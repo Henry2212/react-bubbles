@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { axiosWithAuth } from "../utils/axiosWithAuth";
+import { useParams } from 'react-router-dom';
+import { axiosWithAuth } from '../utils/axiosWithAuth';
+// import axios from "axios";
 
 const initialColor = {
   color: "",
@@ -10,47 +12,39 @@ const ColorList = ({ colors, updateColors }) => {
   console.log(colors);
   const [editing, setEditing] = useState(false);
   const [colorToEdit, setColorToEdit] = useState(initialColor);
+  const { id } = useParams();
 
   const editColor = color => {
     setEditing(true);
     setColorToEdit(color);
   };
 
- 
-    // Make a put request to save your updated color
-    // think about where will you get the id from...
-    // where is is saved right now?
-    const saveEdit = e => {
-      e.preventDefault();
-      console.log("edit", colorToEdit);
-      axiosWithAuth()
-      .put(`/api/colors/${colorToEdit.id}`, colorToEdit)
-      .then (res => {
-        console.log( " Response in the PUT request",res)
-        updateColors(colors => colors.map((color) => {
-          return color.id === colorToEdit.id ? {...colorToEdit} : color;
-        }));
-      })
-      .catch(err => {
-        console.log(err)
-      })
-  };
-    // make a delete request to delete this color
-  const deleteColor = color => {
-    console.log("Color in delete", color.id)
+  const saveEdit = e => {
+    e.preventDefault();
     axiosWithAuth()
-    .delete(`/api/colors/${color.id}`)
-    .then(res => {
-      console.log("Response in the DELETE request",res)
-      updateColors(res.data.filter(item => {
-        console.log("item",item)
-        return (
-          item.color !== color.id
-        )
-      }));
-    })
-    .catch (err => console.log (err))
+      .put(`api/colors/${colorToEdit.id}`, colorToEdit)
+      .then(res => {
+        console.log(res.data);
+        updateColors([
+          ...colors.filter(color => color.id !== colorToEdit.id),
+          res.data,
+        ]);
+        setEditing(false);
+      })
+      .catch(err => console.log(err));
+  };
 
+  const deleteColor = color => {
+      axiosWithAuth()
+      .delete(`/api/colors/${color.id}`)
+      .then(res => {
+        console.log(res);
+        updateColors([
+          ...colors
+        ]);
+        window.location.reload();
+      })
+      .catch(err => console.log(err))
   };
 
   return (
@@ -60,9 +54,8 @@ const ColorList = ({ colors, updateColors }) => {
         {colors.map(color => (
           <li key={color.color} onClick={() => editColor(color)}>
             <span>
-            <span className="delete"
-               onClick={e => {
-                    //e.stopPropagation();
+              <span className="delete" onClick={e => {
+                    e.stopPropagation();
                     deleteColor(color)
                   }
                 }>
@@ -108,7 +101,6 @@ const ColorList = ({ colors, updateColors }) => {
         </form>
       )}
       <div className="spacer" />
-      {/* stretch - build another form here to add a color */}
     </div>
   );
 };
